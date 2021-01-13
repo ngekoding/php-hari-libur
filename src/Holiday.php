@@ -28,27 +28,49 @@ class Holiday
       $this->addDefaultDay('Minggu', 'Libur pekanan hari minggu');
     }
 
+    $holidays = [];
     $localHolidays = $this->getFromLocal($year);
 
     if (!$local || empty($localHolidays)) {
-      $holidays = $crawler->filter('table.publicholidays tbody tr')->each(function($row) use ($year) {
+      $crawler->filter('table.publicholidays tbody tr')->each(function($row) use (&$holidays, $year) {
         $rowClass = trim($row->attr('class'));
         if (in_array($rowClass, ['even', 'odd'])) {
           $columns = $row->children('td');
-          list($day, $monthIndo) = explode(' ', $columns->eq(0)->text());
+          $dateStr = $columns->eq(0)->text();
           $description = trim($columns->eq(2)->text());
+          
+          // The date str may include range with format date1 to date2
+          $dateExp = explode(' to ', $dateStr);
 
-          $month = array_search($monthIndo, $this->monthList);
-          $date = date('Y-m-d', strtotime($year.'-'.$month.'-'.$day));
-          return (object) [
-            'date' => $date,
-            'description' => $description
-          ]; 
+          if (count($dateExp) == 2) {
+            list($dayStart, $monthIndoStart) = explode(' ', trim($dateExp[0]));
+            list($dayEnd, $monthIndoEnd) = explode(' ', trim($dateExp[1]));
+            $monthStart = array_search($monthIndoStart, $this->monthList);
+            $monthEnd = array_search($monthIndoEnd, $this->monthList);
+            $dateStart = strtotime($year.'-'.$monthStart.'-'.$dayStart);
+            $dateEnd = strtotime($year.'-'.$monthEnd.'-'.$dayEnd);
+
+            while ($dateStart <= $dateEnd) {
+              $date = date('Y-m-d', $dateStart);
+              array_push($holidays, [
+                'date' => $date,
+                'description' => $description
+              ]); 
+              $dateStart = strtotime('+1 day', $dateStart);
+            }
+          } else {
+            list($day, $monthIndo) = explode(' ', trim($dateExp[0]));
+            $month = array_search($monthIndo, $this->monthList);
+            $date = date('Y-m-d', strtotime($year.'-'.$month.'-'.$day));
+            array_push($holidays, [
+              'date' => $date,
+              'description' => $description
+            ]); 
+          }
         }
-        return NULL;
       });
-      $this->holidays = array_values(array_filter($holidays));
-      $this->saveToLocal($year, $this->holidays);
+      $this->holidays = $holidays;
+      $this->saveToLocal($year, $holidays);
     } else {
       $this->holidays = $localHolidays;
     }
