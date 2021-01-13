@@ -42,7 +42,7 @@ Method yang digunakan untuk mengecekan tanggal yang diberikan apakah merupakan h
   "result": {
     "date": "2020-01-01",
     "description": "Hari libur awal tahun"
-    }
+  }
 }
 ```
 
