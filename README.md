@@ -14,11 +14,11 @@ composer require ngekoding\php-hari-libur
 
 ```php
 <?php
-require  'vendor/autoload.php';
+require 'vendor/autoload.php';
 
-use  ngekoding\PhpHariLibur\Holiday;
+use ngekoding\PhpHariLibur\Holiday;
 
-$holiday = new  Holiday('2020');
+$holiday = new Holiday('2020');
 
 $date = '2020-01-01';
 $isHoliday = $holiday->check($date);
@@ -28,7 +28,7 @@ echo $date.': '.$isHoliday; // Output: 2020-01-01: true
 
 ## Pengaturan dan Method
 
-`Holiday($year, $local = FALSE, $defaultSunday = TRUE)`
+`new Holiday($year, $local = FALSE, $defaultSunday = TRUE)`
 
 Konstruktor Holiday memiliki tiga parameter, `$year` digunakan untuk menentukan tahun, `$local` digunakan untuk menentukan apakah akan menggunakan sumber data lokal atau tidak, dan terakhir adalah `$defaultSunday` untuk menentukan apakah akan menggunakan hari Minggu sebagai default hari libur. Hanya `$year` yang wajib untuk diisi.
 
