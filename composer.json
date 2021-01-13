@@ -1,0 +1,20 @@
+{
+    "name": "ngekoding/php-hari-libur",
+    "description": "Sebuah pustaka untuk mengecek hari libur di Indonesia",
+    "type": "library",
+    "require": {
+        "fabpot/goutte": "^3.2"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Nur Muhammad",
+            "email": "blog.nurmuhammad@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": { 
+          "ngekoding\\PhpHariLibur\\": "src/" 
+        }
+    }
+}

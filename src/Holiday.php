@@ -1,0 +1,213 @@
+<?php
+namespace ngekoding\PhpHariLibur;
+
+use Goutte\Client;
+
+class Holiday
+{
+  private $baseUrl = 'https://publicholidays.co.id/id/%s-dates';
+  private $dayList = [ 1 => 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+  private $monthList = [ 
+    1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 
+    'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
+
+  private $holidays;
+  private $defaultDays = [];
+  private $defaultDates = [];
+
+  public function __construct($year = NULL, $local = FALSE, $defaultSunday = TRUE)
+  {
+    $year = empty($year) ? date('Y') : $year;
+    $url = sprintf($this->baseUrl, $year);
+    $client = new Client();
+    $crawler = $client->request('GET', $url);
+    
+    // Add default Sunday as holiday
+    if ($defaultSunday) {
+      $this->addDefaultDay('Minggu', 'Libur pekanan hari minggu');
+    }
+
+    $localHolidays = $this->getFromLocal($year);
+
+    if (!$local || empty($localHolidays)) {
+      $holidays = $crawler->filter('table.publicholidays tbody tr')->each(function($row) use ($year) {
+        $rowClass = trim($row->attr('class'));
+        if (in_array($rowClass, ['even', 'odd'])) {
+          $columns = $row->children('td');
+          list($day, $monthIndo) = explode(' ', $columns->eq(0)->text());
+          $description = trim($columns->eq(2)->text());
+
+          $month = array_search($monthIndo, $this->monthList);
+          $date = date('Y-m-d', strtotime($year.'-'.$month.'-'.$day));
+          return (object) [
+            'date' => $date,
+            'description' => $description
+          ]; 
+        }
+        return NULL;
+      });
+      $this->holidays = array_values(array_filter($holidays));
+      $this->saveToLocal($year, $this->holidays);
+    } else {
+      $this->holidays = $localHolidays;
+    }
+  }
+
+  /**
+   * Add default holiday by name (indonesia format)
+   * e.g Minggu
+   */
+  public function addDefaultDay($day, $description)
+  {
+    $day = ucfirst(strtolower($day));
+    array_push($this->defaultDays, (object) [
+      'day' => $day,
+      'description' => $description
+    ]);
+  }
+
+  /**
+   * Add default holiday by date (Y-m-d)
+   * e.g 2020-01-05
+   */
+  public function addDefaultDate($date, $description)
+  {
+    array_push($this->defaultDates, (object) [
+      'date' => $date,
+      'description' => $description
+    ]);
+  }
+
+  /**
+   * Get all holidays
+   * National holiday + default dates
+   * 
+   * @return array
+   */
+  public function getHolidays()
+  {
+    return array_merge($this->holidays, $this->defaultDates);
+  }
+
+  /**
+   * Get all holiday default day
+   * 
+   * @return array
+   */
+  public function getDefaultDays()
+  {
+    return $this->defaultDays;
+  }
+
+  /**
+   * Get all holiday default dates
+   * 
+   * @return array
+   */
+  public function getDefaultDates()
+  {
+    return $this->defaultDates;
+  }
+
+  /**
+   * Checking given date is holiday or not
+   * @param $date   The date to check, Y-m-d format
+   * @param $bool   Defining the return type
+   * 
+   * @return boolean|object
+   */
+  public function check($date, $bool = TRUE)
+  {
+    $status = FALSE;
+    $result = (object) [
+      'date' => $date,
+      'description' => NULL
+    ];
+
+    $holidays = $this->getHolidays();
+    $dayNum = date('N', strtotime($date));
+    $day = $this->dayList[$dayNum];
+
+    // Checking default date
+    if (($key = array_search($day, $this->_array_column($this->defaultDays, 'day'))) !== FALSE) {
+      $status = TRUE;
+      $result = (object) [
+        'date' => $date,
+        'description' => $this->defaultDays[$key]->description
+      ];
+    } elseif (($key = array_search($date, $this->_array_column($holidays, 'date'))) !== FALSE) {
+      $status = TRUE;
+      $result = (object) [
+        'date' => $date,
+        'description' => $holidays[$key]->description
+      ];
+    }
+
+    if ($bool) {
+      return $status;
+    } else {
+      return (object) [
+        'status' => $status,
+        'result' => $result
+      ];
+    }
+  }
+
+  /**
+   * PRIVATE METHODS
+   * Some awesome func to make our life esasier
+   */
+
+  /**
+   * Get local holidays by year
+   * @param $year The holidays year
+   * 
+   * @return array
+   */
+  private function getFromLocal($year)
+  {
+    $file = __DIR__.'/locals/holidays-'.$year.'.json';
+
+    if (!file_exists($file)) {
+      return [];
+    }
+
+    return json_decode(file_get_contents($file));
+  }
+
+  /**
+   * Save holidays to local
+   * @param $year       Holidays year
+   * @param $holidays   Array of object the holidays
+   * 
+   * @return void
+   */
+  private function saveToLocal($year, $holidays)
+  {
+    $file = __DIR__.'/locals/holidays-'.$year.'.json';
+    file_put_contents($file, json_encode($holidays));
+  }
+
+  /**
+   * Array column func for old php version that didn't support yet
+   */
+  private function _array_column($array, $columnKey, $indexKey = null)
+  {
+    $result = array();
+    foreach ($array as $subArray) {
+      if (is_null($indexKey) && array_key_exists($columnKey, $subArray)) {
+        $result[] = is_object($subArray)?$subArray->$columnKey: $subArray[$columnKey];
+      } elseif (array_key_exists($indexKey, $subArray)) {
+        if (is_null($columnKey)) {
+          $index = is_object($subArray)?$subArray->$indexKey: $subArray[$indexKey];
+          $result[$index] = $subArray;
+        } elseif (array_key_exists($columnKey, $subArray)) {
+          $index = is_object($subArray)?$subArray->$indexKey: $subArray[$indexKey];
+          $result[$index] = is_object($subArray)?$subArray->$columnKey: $subArray[$columnKey];
+        }
+      }
+    }
+    return $result;
+  }
+}
