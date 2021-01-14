@@ -52,7 +52,7 @@ class Holiday
 
             while ($dateStart <= $dateEnd) {
               $date = date('Y-m-d', $dateStart);
-              array_push($holidays, [
+              array_push($holidays, (object) [
                 'date' => $date,
                 'description' => $description
               ]); 
@@ -62,7 +62,7 @@ class Holiday
             list($day, $monthIndo) = explode(' ', trim($dateExp[0]));
             $month = array_search($monthIndo, $this->monthList);
             $date = date('Y-m-d', strtotime($year.'-'.$month.'-'.$day));
-            array_push($holidays, [
+            array_push($holidays, (object) [
               'date' => $date,
               'description' => $description
             ]); 
