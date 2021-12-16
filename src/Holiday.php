@@ -3,6 +3,8 @@ namespace ngekoding\PhpHariLibur;
 
 use Goutte\Client;
 
+require __DIR__.'/helpers/array_helper.php';
+
 class Holiday
 {
   private $baseUrl = 'https://publicholidays.co.id/id/%s-dates';
@@ -152,13 +154,13 @@ class Holiday
     $day = $this->dayList[$dayNum];
 
     // Checking default date
-    if (($key = array_search($day, $this->_array_column($this->defaultDays, 'day'))) !== FALSE) {
+    if (($key = array_search($day, array_column($this->defaultDays, 'day'))) !== FALSE) {
       $status = TRUE;
       $result = (object) [
         'date' => $date,
         'description' => $this->defaultDays[$key]->description
       ];
-    } elseif (($key = array_search($date, $this->_array_column($holidays, 'date'))) !== FALSE) {
+    } elseif (($key = array_search($date, array_column($holidays, 'date'))) !== FALSE) {
       $status = TRUE;
       $result = (object) [
         'date' => $date,
@@ -209,27 +211,5 @@ class Holiday
   {
     $file = __DIR__.'/locals/holidays-'.$year.'.json';
     file_put_contents($file, json_encode($holidays));
-  }
-
-  /**
-   * Array column func for old php version that didn't support yet
-   */
-  private function _array_column($array, $columnKey, $indexKey = null)
-  {
-    $result = array();
-    foreach ($array as $subArray) {
-      if (is_null($indexKey) && array_key_exists($columnKey, $subArray)) {
-        $result[] = is_object($subArray)?$subArray->$columnKey: $subArray[$columnKey];
-      } elseif (array_key_exists($indexKey, $subArray)) {
-        if (is_null($columnKey)) {
-          $index = is_object($subArray)?$subArray->$indexKey: $subArray[$indexKey];
-          $result[$index] = $subArray;
-        } elseif (array_key_exists($columnKey, $subArray)) {
-          $index = is_object($subArray)?$subArray->$indexKey: $subArray[$indexKey];
-          $result[$index] = is_object($subArray)?$subArray->$columnKey: $subArray[$columnKey];
-        }
-      }
-    }
-    return $result;
   }
 }
