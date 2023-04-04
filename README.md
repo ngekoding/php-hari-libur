@@ -7,7 +7,7 @@ Library ini merujuk kepada sumber data di https://publicholidays.co.id, akan tet
 ## Instalasi
 
 ```bash
-composer require ngekoding\php-hari-libur
+composer require ngekoding/php-hari-libur
 ```
 
 ## Contoh Penggunaan
