@@ -50,9 +50,9 @@ Method yang digunakan untuk mengecekan tanggal yang diberikan apakah merupakan h
 
 Digunakan untuk menambahkan default hari libur berdasarkan nama hari (format Indonesia). Misalnya membuat default hari libur pada hari Selasa.
 
-`addDefaultDate($date, $description)`
+`addDefaultDate($dateStart, $dateEnd = NULL, $description)`
 
-Digunakan untuk menambahkan default hari libur berdasarkan tanggal tertentu (format `Y-m-d`). Misalnya membuat default hari libur pada tanggal 2020-01-10.
+Digunakan untuk menambahkan default hari libur berdasarkan tanggal atau dalam rentang tanggal tertentu (format `Y-m-d`). Misalnya membuat default hari libur pada tanggal 2020-01-10.
 
 `getHolidays()`
 

@@ -18,6 +18,13 @@ class Holiday
   private $defaultDays = [];
   private $defaultDates = [];
 
+  /**
+   * Initialize the Holiday.
+   * 
+   * @param int|string $year    The holidays year
+   * @param bool $local         Use local saved file if available
+   * @param bool $defaultSunday Indicate that Sunday as default holiday
+   */
   public function __construct($year = NULL, $local = FALSE, $defaultSunday = TRUE)
   {
     $year = empty($year) ? date('Y') : $year;
@@ -49,26 +56,19 @@ class Holiday
             list($dayEnd, $monthIndoEnd) = explode(' ', trim($dateExp[1]));
             $monthStart = array_search($monthIndoStart, $this->monthList);
             $monthEnd = array_search($monthIndoEnd, $this->monthList);
-            $dateStart = strtotime($year.'-'.$monthStart.'-'.$dayStart);
-            $dateEnd = strtotime($year.'-'.$monthEnd.'-'.$dayEnd);
-
-            while ($dateStart <= $dateEnd) {
-              $date = date('Y-m-d', $dateStart);
-              array_push($holidays, (object) [
-                'date' => $date,
-                'description' => $description
-              ]); 
-              $dateStart = strtotime('+1 day', $dateStart);
-            }
+            $dateStart = date('Y-m-d', strtotime($year.'-'.$monthStart.'-'.$dayStart));
+            $dateEnd = date('Y-m-d', strtotime($year.'-'.$monthEnd.'-'.$dayEnd));
           } else {
             list($day, $monthIndo) = explode(' ', trim($dateExp[0]));
             $month = array_search($monthIndo, $this->monthList);
-            $date = date('Y-m-d', strtotime($year.'-'.$month.'-'.$day));
-            array_push($holidays, (object) [
-              'date' => $date,
-              'description' => $description
-            ]); 
+            $dateStart = $dateEnd = date('Y-m-d', strtotime($year.'-'.$month.'-'.$day));
           }
+
+          array_push($holidays, (object) [
+            'dateStart' => $dateStart,
+            'dateEnd' => $dateEnd,
+            'description' => $description
+          ]); 
         }
       });
       $this->holidays = $holidays;
@@ -79,8 +79,10 @@ class Holiday
   }
 
   /**
-   * Add default holiday by name (indonesia format)
-   * e.g Minggu
+   * Add default holiday by day name.
+   * 
+   * @param string $day         The day name in Indonesia format (e.g. Minggu)
+   * @param string $description The holiday description
    */
   public function addDefaultDay($day, $description)
   {
@@ -92,20 +94,23 @@ class Holiday
   }
 
   /**
-   * Add default holiday by date (Y-m-d)
-   * e.g 2020-01-05
+   * Add default holiday by date.
+   * 
+   * @param string $dateStart   The start holiday date
+   * @param string $dateEnd     The end holiday date
+   * @param string $description The holiday description
    */
-  public function addDefaultDate($date, $description)
+  public function addDefaultDate($dateStart, $dateEnd = NULL, $description)
   {
     array_push($this->defaultDates, (object) [
-      'date' => $date,
+      'dateStart' => $dateStart,
+      'dateEnd' => $dateEnd ?: $dateStart,
       'description' => $description
     ]);
   }
 
   /**
-   * Get all holidays
-   * National holiday + default dates
+   * Get all holidays, including national holiday + default dates.
    * 
    * @return array
    */
@@ -115,7 +120,7 @@ class Holiday
   }
 
   /**
-   * Get all holiday default day
+   * Get all holiday default day.
    * 
    * @return array
    */
@@ -125,7 +130,7 @@ class Holiday
   }
 
   /**
-   * Get all holiday default dates
+   * Get all holiday default dates.
    * 
    * @return array
    */
@@ -135,7 +140,8 @@ class Holiday
   }
 
   /**
-   * Checking given date is holiday or not
+   * Checking given date is holiday or not.
+   * 
    * @param $date   The date to check, Y-m-d format
    * @param $bool   Defining the return type
    * 
@@ -160,12 +166,21 @@ class Holiday
         'date' => $date,
         'description' => $this->defaultDays[$key]->description
       ];
-    } elseif (($key = array_search($date, array_column($holidays, 'date'))) !== FALSE) {
-      $status = TRUE;
-      $result = (object) [
-        'date' => $date,
-        'description' => $holidays[$key]->description
-      ];
+    } else {
+      $time = strtotime($date);
+      foreach ($holidays as $holiday) {
+        $timeStart = strtotime($holiday->dateStart);
+        $timeEnd = strtotime($holiday->dateEnd);
+        
+        if ($time >= $timeStart && $time <= $timeEnd) {
+          $status = TRUE;
+          $result = (object) [
+            'date' => $date,
+            'description' => $holiday->description
+          ];
+          break;
+        }
+      }
     }
 
     if ($bool) {
@@ -185,6 +200,7 @@ class Holiday
 
   /**
    * Get local holidays by year
+   * 
    * @param $year The holidays year
    * 
    * @return array
@@ -210,6 +226,6 @@ class Holiday
   private function saveToLocal($year, $holidays)
   {
     $file = __DIR__.'/locals/holidays-'.$year.'.json';
-    file_put_contents($file, json_encode($holidays));
+    file_put_contents($file, json_encode($holidays, JSON_PRETTY_PRINT));
   }
 }
