@@ -14,7 +14,7 @@
     ],
     "autoload": {
         "psr-4": { 
-          "ngekoding\\PhpHariLibur\\": "src/" 
+          "Ngekoding\\PhpHariLibur\\": "src/" 
         }
     }
 }

@@ -16,7 +16,7 @@ composer require ngekoding/php-hari-libur
 <?php
 require 'vendor/autoload.php';
 
-use ngekoding\PhpHariLibur\Holiday;
+use Ngekoding\PhpHariLibur\Holiday;
 
 $holiday = new Holiday('2020');
 

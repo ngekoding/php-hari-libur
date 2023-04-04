@@ -1,5 +1,5 @@
 <?php
-namespace ngekoding\PhpHariLibur;
+namespace Ngekoding\PhpHariLibur;
 
 use Goutte\Client;
 
